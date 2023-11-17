@@ -21,7 +21,9 @@ st.dataframe(df.head())
 def get_user_input():
     user_input = {}
     for column in df.columns:
-        if df[column].dtype == 'object':  # Check if the column has categorical values
+        if df[column].dtype == 'object' :  # Check if the column has categorical values
+            user_input[column] = st.sidebar.selectbox(f'Select value for {column}:', df[column].unique())
+        elif  df[column].dtype == 'category':
             user_input[column] = st.sidebar.selectbox(f'Select value for {column}:', df[column].unique())
         else:
             user_input[column] = st.sidebar.text_input(f'Enter value for {column}:', 0.0)
@@ -33,5 +35,6 @@ user_input = get_user_input()
 # Make predictions
 if st.button('Make Prediction'):
     input_data = [user_input[column] if df[column].dtype == 'object' else float(user_input[column]) for column in df.columns]
+    st.write(input_data)
     predictions = predict_model(loaded_model, data=input_data)
     st.write('Prediction:', predictions)
