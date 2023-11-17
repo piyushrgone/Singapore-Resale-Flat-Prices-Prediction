@@ -2,21 +2,26 @@ import streamlit as st
 import pandas as pd
 from pycaret.regression import *
 
+# Set page configurations
+st.set_page_config(
+    page_title="Singapore  Resale Flat Prices Prediction",
+    page_icon="🏠",
+    layout="wide",  # Maximize the app size
+    initial_sidebar_state="expanded"  # Always open the sidebar
+)
+
 # Streamlit UI
 st.title(' Singapore  Resale Flat Prices Prediction') 
 
 # Load the pre-trained model
-loaded_model = load_model('XGBOOST_pipeline')
+loaded_model = load_model('Blend_pipeline')
 
 df = pd.read_parquet('Data.parquet')
 del df['Unnamed: 0']
-df['town'] = df.town.astype('category')
-df['flat_type'] = df.flat_type.astype('category')
-df['storey_range'] = df.storey_range.astype('category')
-df['age_of_flat'] = df.age_of_flat.astype('int8')
-df['resale_price'] = df.resale_price.astype('float32')
-df['lease_commence_date'] = df.lease_commence_date.astype('int16')
-st.dataframe(df.head())
+del df['resale_price']
+del df['price_per_square_meter']
+
+# st.dataframe(df.head())
 
 def get_user_input():
     user_input = {}
@@ -26,15 +31,21 @@ def get_user_input():
         elif  df[column].dtype == 'category':
             user_input[column] = st.sidebar.selectbox(f'Select value for {column}:', df[column].unique())
         else:
-            user_input[column] = st.sidebar.text_input(f'Enter value for {column}:', 0.0)
+           # Use a slider for numerical columns
+            min_value = df[column].min()
+            max_value = df[column].max()
+            user_input[column] = st.sidebar.slider(f'Choose value for {column}:', min_value, max_value, min_value)
     return user_input
 # Add input elements
 user_input = get_user_input()
 
 
+user_input_df = pd.DataFrame(user_input, index=[0])
+
 # Make predictions
 if st.button('Make Prediction'):
-    input_data = [user_input[column] if df[column].dtype == 'object' else float(user_input[column]) for column in df.columns]
-    st.write(input_data)
-    predictions = predict_model(loaded_model, data=input_data)
-    st.write('Prediction:', predictions)
+    # input_data = [user_input[column] if df[column].dtype == 'object' else float(user_input[column]) for column in df.columns]
+    st.write('User Input:')
+    st.dataframe(user_input_df)
+    predictions = predict_model(loaded_model, data=user_input_df)
+    st.write('Prediction:', predictions['prediction_label'])
